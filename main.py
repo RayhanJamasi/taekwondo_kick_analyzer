@@ -47,6 +47,6 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
         if cv2.waitKey(10) & 0xFF == ord('q'):
             break
 
-# Releasing webcam and closing openCV windows
+# Releasing webcam and closing OpenCV windows
 cap.release()
 cv2.destroyAllWindows()

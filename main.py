@@ -9,10 +9,7 @@ mp_pose = mp.solutions.pose # Detection model that figures out where each part o
 cap = cv2.VideoCapture(0)
 
 # Load bodytracking system and declaring confidence levels
-with mp_pose.Pose(
-    min_detection_confidence=0.5,
-    min_tracking_confidence=0.5
-) as pose:
+with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as pose:
     # While webcam is online
     while cap.isOpened():
         # Get camera status and actual image and break if camera is offline

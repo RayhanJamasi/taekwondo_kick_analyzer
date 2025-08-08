@@ -1,0 +1,6 @@
+# Ignore Python venv and other data
+.venv/
+.DS_Store
+__pycache__/
+*.pyc
+data/*.csv

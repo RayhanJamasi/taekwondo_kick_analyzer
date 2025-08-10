@@ -64,15 +64,23 @@ def get_hip_rotation(landmarks):
     return abs(left_hip_x - right_hip_x)
 
 # Gets the "good height" threshold depending on the height of the person kicking
-# This will be inbetween the shoulders (at the chest)
+# This will be inbetween the shoulders (at the chest). The height is relative
+# from the hips to the chest. This way, I can compare it to the max kick height
+# that is relative from the hips
 def get_chest_height_threshold(landmarks):
-    # Getting y values for hte shoulders
-    left_shoulder_y = landmarks[mp.solutions.pose.PoseLandmark.LEFT_SHOULDER].y
-    right_shoulder_y = landmarks[mp.solutions.pose.PoseLandmark.RIGHT_SHOULDER].y
+    # Get the positions of both sides of hips and the mid position
+    left_hip_y = landmarks[23].y
+    right_hip_y = landmarks[24].y
+    mid_hip_y = (left_hip_y + right_hip_y) / 2
 
-    # Average y of shoulders
-    chest_y = (left_shoulder_y + right_shoulder_y) / 2
+    # Get the positions of both sides of shoulders and the mid position
+    left_shoulder_y = landmarks[11].y
+    right_shoulder_y = landmarks[12].y
+    mid_shoulder_y = (left_shoulder_y + right_shoulder_y) / 2
 
-    # Return this chest height as threshold
-    return chest_y
+    # Calculating relative chest height
+    chest_height_relative = mid_hip_y - mid_shoulder_y
+
+    # returning the relative chest height
+    return chest_height_relative
 

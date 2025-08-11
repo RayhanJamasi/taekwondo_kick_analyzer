@@ -32,6 +32,9 @@ def run_pose_detection(show_coords=False, visibility_threshold=0.5):
     chest_height_threshold = None # Used to get chest height
     chest_dot_position = None
 
+    start_time = time.time()
+    countdown_seconds = 10
+
     # Load bodytracking system and declaring confidence levels
     with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as pose:
         # While camera is open
@@ -40,6 +43,20 @@ def run_pose_detection(show_coords=False, visibility_threshold=0.5):
             ret, frame = cap.read()
             if not ret:
                 break
+
+            time_past = time.time() - start_time
+            remaining = countdown_seconds - int(time_past)
+
+            if remaining > 0:
+                # Countdown text in middle of screen
+                h, w, _ = frame.shape
+                cv2.putText(frame, str(remaining), (w // 2 - 50, h // 2), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 4, (0, 0, 255), 8)
+
+                cv2.imshow('Kick Analyzer', frame)
+                if cv2.waitKey(5) & 0xFF == 27:
+                    break
+                continue
 
             # Converting image to RGB for mediapipe
             # Making the flag false for now so its faster

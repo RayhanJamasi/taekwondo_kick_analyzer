@@ -162,7 +162,10 @@ def run_pose_detection(show_coords=False, visibility_threshold=0.5):
                             right_last_kick_end_time = current_time
 
                             # Qualitative feedback
-                            height_feedback = "Good height!" if right_max_kick_height < chest_height_threshold else "Try raising your knee higher."
+                            if right_max_kick_height > chest_height_threshold:
+                                height_feedback = "Good height!"
+                            else:
+                                height_feedback = "Try raising your knee higher."
                             knee_feedback = "Nice knee extension!" if right_max_knee_angle > 160 else "Try to straighten your knee more."
 
                             print(f"""Right Kick Summary:
@@ -197,7 +200,11 @@ def run_pose_detection(show_coords=False, visibility_threshold=0.5):
                             left_last_kick_end_time = current_time
 
                             # Qualitative feedback
-                            height_feedback = "Good height!" if left_max_kick_height < chest_height_threshold else "Try raising your knee higher."
+                            if left_max_kick_height > chest_height_threshold:
+                                height_feedback = "Good height!"
+                            else:
+                                height_feedback = "Try raising your knee higher."
+
                             # If the knee angle is
                             knee_feedback = "Nice knee extension!" if left_max_knee_angle > 160 else "Try to straighten your knee more."
 

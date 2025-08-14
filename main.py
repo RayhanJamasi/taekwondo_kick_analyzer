@@ -185,12 +185,12 @@ def run_pose_detection(show_coords=False, visibility_threshold=0.5):
                             if right_max_knee_angle > 160:
                                 knee_feedback = "Nice knee extension!"
                             else:
-                                 "Try to straighten your knee more."
+                                knee_feedback = "Try to straighten your knee more."
 
                             if (right_kick_duration is not None and right_kick_duration < speed_threshold):
                                 speed_feedback = "Oh good job, you're fast!"
                             else:
-                                "Try to increase the speed."
+                                speed_feedback = "Try to increase the speed."
 
                             print(f"""Right Kick Summary:
                                     Max Knee Angle: {right_max_knee_angle:.2f}°
@@ -237,8 +237,15 @@ def run_pose_detection(show_coords=False, visibility_threshold=0.5):
                                 height_feedback = "Try raising your knee higher."
 
                             # If the knee angle is
-                            knee_feedback = "Nice knee extension!" if left_max_knee_angle > 160 else "Try to straighten your knee more."
-                            speed_feedback = "Oh good job, you're fast!" if (left_kick_duration is not None and left_kick_duration < speed_threshold) else "Try to increase the speed."
+                            if left_max_knee_angle > 160:
+                                knee_feedback = "Nice knee extension!"
+                            else:
+                                knee_feedback = "Try to straighten your knee more."
+                            
+                            if (left_kick_duration is not None and left_kick_duration < speed_threshold):
+                                speed_feedback = "Oh good job, you're fast!"
+                            else:
+                                speed_feedback = "Try to increase the speed."
 
                             print(f"""Left Kick Summary:
                                     Max Knee Angle: {left_max_knee_angle:.2f}°

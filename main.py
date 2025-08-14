@@ -30,7 +30,8 @@ def run_pose_detection(show_coords=False, visibility_threshold=0.5):
     left_kick_start_time = None
 
     # Threshold variables
-    kick_height_threshold = 0.1 # For when foot is on the ground
+    kick_start_threshold = 0.3 # For when foot is lifted off the ground
+    kick_end_threshold = 0.1 # For when feet has come back down
     chest_height_threshold = None # Used to get chest height
     chest_dot_position = None
     speed_threshold = 0.6 # Max duration (seconds) to consider a kick fast
@@ -146,22 +147,22 @@ def run_pose_detection(show_coords=False, visibility_threshold=0.5):
                     right_kick_height = get_kick_height(landmarks, side="right")
 
                     # If the kick has started and cooldown time ended
+                    # Kick started
                     if (not right_kick_in_progress and
-                            right_kick_height > kick_height_threshold and
+                            right_kick_height > kick_start_threshold and
                             (current_time - right_last_kick_end_time) > right_cooldown):
-                        # Kick started
                         right_kick_in_progress = True
                         right_max_knee_angle = right_knee_angle
                         right_max_kick_height = right_kick_height
                         right_kick_start_time = current_time
 
+                    # Kick in progress
                     elif right_kick_in_progress:
-                        # Updating max values
                         right_max_knee_angle = max(right_max_knee_angle, right_knee_angle)
                         right_max_kick_height = max(right_max_kick_height, right_kick_height)
 
                         # Kick ended
-                        if right_kick_height < kick_height_threshold:
+                        if right_kick_height < kick_end_threshold:  # <- use kick_end_threshold
                             right_kick_in_progress = False
                             right_last_kick_end_time = current_time
                         
@@ -207,25 +208,25 @@ def run_pose_detection(show_coords=False, visibility_threshold=0.5):
                     left_knee_angle = get_knee_angle(landmarks, side="left")
                     left_kick_height = get_kick_height(landmarks, side="left")
 
+                    # Kick started
                     if (not left_kick_in_progress and
-                            left_kick_height > kick_height_threshold and
+                            left_kick_height > kick_start_threshold and
                             (current_time - left_last_kick_end_time) > left_cooldown):
-                        # Kick started
                         left_kick_in_progress = True
                         left_max_knee_angle = left_knee_angle
                         left_max_kick_height = left_kick_height
                         left_kick_start_time = current_time
 
+                    # Kick in progress
                     elif left_kick_in_progress:
-                        # Updating the max values
                         left_max_knee_angle = max(left_max_knee_angle, left_knee_angle)
                         left_max_kick_height = max(left_max_kick_height, left_kick_height)
 
                         # Kick ended
-                        if left_kick_height < kick_height_threshold:
+                        if left_kick_height < kick_end_threshold:
                             left_kick_in_progress = False
                             left_last_kick_end_time = current_time
-                        
+
                             # Calculate duration and speed feedback
                             left_kick_duration = (current_time - left_kick_start_time) if left_kick_start_time is not None else None
                             left_duration_str = f"{left_kick_duration:.2f}s" if left_kick_duration is not None else "n/a"

@@ -39,19 +39,15 @@ def get_knee_angle(landmarks, side="right"):
     # Returning the angle value between the 3 landmarks
     return calculate_angle(hip, knee, ankle)
 
-# Gets the ankle height relative to hip height
+# Gets the ankle height
 def get_kick_height(landmarks, side="right"):
     # Getting the y values for the hip and ankle
     if side == "right":
         ankle_y = landmarks[28].y
-        hip_y = landmarks[24].y
     else:
         ankle_y = landmarks[27].y
-        hip_y = landmarks[23].y
 
-    # Calculating the relative height and returning it
-    # Note: MediaPipe y axis is inverted, so that 0 is at the top of the frame
-    return (hip_y - ankle_y)
+    return ankle_y
 
 # Measures the horizontal rotation of the hips by getting the difference in 
 # x positions of the right/left sides of the hips. This is important for checking
@@ -64,23 +60,12 @@ def get_hip_rotation(landmarks):
     return abs(left_hip_x - right_hip_x)
 
 # Gets the "good height" threshold depending on the height of the person kicking
-# This will be inbetween the shoulders (at the chest). The height is relative
-# from the hips to the chest. This way, I can compare it to the max kick height
-# that is relative from the hips
-def get_chest_height_threshold(landmarks):
-    # Get the positions of both sides of hips and the mid position
-    left_hip_y = landmarks[23].y
-    right_hip_y = landmarks[24].y
-    mid_hip_y = (left_hip_y + right_hip_y) / 2
-
-    # Get the positions of both sides of shoulders and the mid position
+# This will be inbetween the shoulders (at the chest).
+def get_chest_height_threshold(landmarks):    # Get the positions of both sides of shoulders and the mid position
     left_shoulder_y = landmarks[11].y
     right_shoulder_y = landmarks[12].y
     mid_shoulder_y = (left_shoulder_y + right_shoulder_y) / 2
 
-    # Calculating relative chest height
-    chest_height_relative = mid_hip_y - mid_shoulder_y
-
     # returning the relative chest height
-    return chest_height_relative
+    return mid_shoulder_y
 

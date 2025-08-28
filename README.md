@@ -22,6 +22,7 @@ This is a program that I use to help improve my kicks. It utilizes packages like
 -  **Angle Calculation**: Calculates the angle and extension for your joints, like the hips, knees, and ankle, to give accurate metrics about your form
 -  **Speed Tracking**: Tracks the speed of your kick and helps ensure your movements are practical in a real taekwondo sparring match
 -  **Adjustment Timer**: Has a 10-second visual timer when you start, as this allows the user to fix their position and ensure their full body is in frame
+-  **Kick Logs**: A recording and metrics folder is created for each kick you make, so you can view it to evaluate your form and check old metrics
 
 ## Taekwondo Kick Analyzer Flow Chart
 
@@ -72,4 +73,5 @@ Currently, there is a problem with the speed calculations. I am currently workin
 ## License
 
 MIT License - see LICENSE file for details.
+
 

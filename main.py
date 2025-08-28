@@ -1,7 +1,8 @@
 import cv2
 import mediapipe as mp
-from pose_utils import get_knee_angle, get_kick_height, get_hip_rotation, get_chest_height_threshold
+from pose_utils import get_knee_angle, get_kick_height, get_hip_rotation, get_chest_height_threshold, save_kick_data
 import time
+from collections import deque
 
 # Setup
 mp_drawing = mp.solutions.drawing_utils # Helper functions to draw dots and lines on body
@@ -36,6 +37,9 @@ def run_pose_detection(show_coords=False, visibility_threshold=0.5):
 
     start_time = time.time()
     countdown_seconds = 10
+
+    # Creating frame buffer for taking last 3 seconds approx (assuming its 30 fps)
+    frame_buffer = deque(maxlen=100)
 
     # Load bodytracking system and declaring confidence levels
     with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as pose:
@@ -142,6 +146,9 @@ def run_pose_detection(show_coords=False, visibility_threshold=0.5):
                 if chest_dot_position is not None:
                     cv2.circle(image, chest_dot_position, 6, (0, 255, 0), -1)
 
+                # Saving frame
+                frame_buffer.append(image.copy())
+
                 # If right side is visible, get the angles using the helper functions
                 if right_visible:
                     right_knee_angle = get_knee_angle(landmarks, side="right")
@@ -200,6 +207,21 @@ def run_pose_detection(show_coords=False, visibility_threshold=0.5):
                                     - {knee_feedback}
                                     - {speed_feedback}
                             """)
+
+                            metrics = {
+                                "side": "right",
+                                "max_knee_angle": right_max_knee_angle,
+                                "max_kick_height": right_max_kick_height,
+                                "duration": right_kick_duration,
+                                "feedback": {
+                                    "height": height_feedback,
+                                    "knee": knee_feedback,
+                                    "speed": speed_feedback
+                                }
+                            }
+
+                            save_kick_data(list(frame_buffer), metrics)
+
 
                 # If left side is visible, get the angles using the helper functions
                 if left_visible:
@@ -260,6 +282,20 @@ def run_pose_detection(show_coords=False, visibility_threshold=0.5):
                                     - {speed_feedback}
                             """)
 
+                            metrics = {
+                                "side": "left",
+                                "max_knee_angle": left_max_knee_angle,
+                                "max_kick_height": left_max_kick_height,
+                                "duration": left_kick_duration,
+                                "feedback": {
+                                    "height": height_feedback,
+                                    "knee": knee_feedback,
+                                    "speed": speed_feedback
+                                }
+                            }
+
+                            save_kick_data(list(frame_buffer), metrics)
+
             # Showing the webcam feed
             cv2.imshow('Pose Detection', image)
 
@@ -274,3 +310,4 @@ def run_pose_detection(show_coords=False, visibility_threshold=0.5):
 # Running the program if called with show_coords to True
 if __name__ == "__main__":
     run_pose_detection(show_coords=True)
+

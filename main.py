@@ -1,6 +1,13 @@
 import cv2
 import mediapipe as mp
-from pose_utils import get_knee_angle, get_kick_height, get_hip_rotation, get_chest_height_threshold, save_kick_data
+from pose_utils import (
+    get_knee_angle,
+    get_kick_height,
+    get_hip_rotation,
+    get_chest_height_threshold,
+    reached_chest_height,
+    save_kick_data,
+)
 import time
 from collections import deque
 
@@ -183,7 +190,7 @@ def run_pose_detection(show_coords=False, visibility_threshold=0.5):
                                 right_duration_str = "n/a"
 
                             # Qualitative feedback 
-                            if right_max_kick_height > chest_height_threshold:
+                            if reached_chest_height(right_max_kick_height, chest_height_threshold):
                                 height_feedback = "Good height!"
                             else:
                                 height_feedback = "Try raising your knee higher."
@@ -256,7 +263,7 @@ def run_pose_detection(show_coords=False, visibility_threshold=0.5):
                                 left_duration_str = "n/a"
 
                             # Qualitative feedback
-                            if left_max_kick_height > chest_height_threshold:
+                            if reached_chest_height(left_max_kick_height, chest_height_threshold):
                                 height_feedback = "Good height!"
                             else:
                                 height_feedback = "Try raising your knee higher."

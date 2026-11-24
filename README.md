@@ -37,28 +37,23 @@ There are a few things that must be understood before using the program:
 
 ## Quick Start
 
-### 1. Install Dependencies
+### 1. Set Up the Environment
 
-```bash
-pip install -r requirements.txt
+Use Python 3.12. This project uses MediaPipe's legacy Solutions API, so MediaPipe is pinned to a compatible version.
+
+```powershell
+py -3.12 -m venv .venv312
+.\.venv312\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
 ```
 
-### 2. Edit Threshold Variables
+### 2. Run the Program
 
-```bash
-chest_dot_position = None
-speed_threshold = 0.6 # Max duration (seconds) to consider a kick fast
-
-start_time = time.time()
-countdown_seconds = 10
-...
+```powershell
+python main.py
 ```
 
-If the threshold variables are not to your liking, you may adjust them
-
-### 3. Run main.py
-
-Run main.py to start the program.
+Make sure your webcam is connected and allowed to access the camera. Press **q** to quit.
 
 ## Status
 

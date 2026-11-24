@@ -72,6 +72,10 @@ def get_chest_height_threshold(landmarks):    # Get the positions of both sides 
     # returning the relative chest height
     return mid_shoulder_y
 
+def reached_chest_height(kick_y, chest_y):
+    # A smaller y value means the foot is higher in the image.
+    return kick_y <= chest_y
+
 def save_kick_data(frame_buffer, metrics):
     # Creating directory
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")

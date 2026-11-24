@@ -1,5 +1,6 @@
 # Ignore Python venv and other data
 .venv/
+.venv312/
 .DS_Store
 __pycache__/
 *.pyc

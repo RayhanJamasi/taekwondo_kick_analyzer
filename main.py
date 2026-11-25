@@ -40,6 +40,8 @@ def run_pose_detection(show_coords=False, visibility_threshold=0.5):
     # Threshold variables
     chest_height_threshold = None # Used to get chest height
     chest_dot_position = None
+    kick_start_threshold = None
+    kick_end_threshold = None
     speed_threshold = 0.6 # Max duration (seconds) to consider a kick fast
 
     start_time = time.time()
@@ -150,6 +152,8 @@ def run_pose_detection(show_coords=False, visibility_threshold=0.5):
                     # Getting static position for the dot
                     chest_dot_position = (middle_dot_x, dot_y)
 
+                # Making sure to  draw the chest height indicator only when all chest related calculations have
+                # been completed 
                 if chest_dot_position is not None:
                     cv2.circle(image, chest_dot_position, 6, (0, 255, 0), -1)
 
@@ -157,7 +161,7 @@ def run_pose_detection(show_coords=False, visibility_threshold=0.5):
                 frame_buffer.append(image.copy())
 
                 # If right side is visible, get the angles using the helper functions
-                if right_visible:
+                if right_visible and kick_start_threshold is not None:
                     right_knee_angle = get_knee_angle(landmarks, side="right")
                     right_kick_height = get_kick_height(landmarks, side="right")
 
@@ -231,7 +235,7 @@ def run_pose_detection(show_coords=False, visibility_threshold=0.5):
 
 
                 # If left side is visible, get the angles using the helper functions
-                if left_visible:
+                if left_visible and kick_start_threshold is not None:
                     left_knee_angle = get_knee_angle(landmarks, side="left")
                     left_kick_height = get_kick_height(landmarks, side="left")
 

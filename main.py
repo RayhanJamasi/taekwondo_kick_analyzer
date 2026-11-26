@@ -51,18 +51,56 @@ def run_pose_detection(
     chest_dot_position = None
     kick_start_threshold = None
     kick_end_threshold = None
-    speed_threshold = 0.6 # Max duration (seconds) to consider a kick fast
+    speed_threshold = 0.45 # Max duration (seconds) to consider a kick fast
 
     start_time = time.time()
     countdown_seconds = 10
 
-    # Creating frame buffer for taking last 3 seconds approx (assuming its 30 fps)
-    frame_buffer = deque(maxlen=100)
+    # Keeping about 3 seconds of frames before each kick
+    frame_buffer = deque()
+    frame_times = deque()
+    pending_recordings = []
+
+    def add_recording_frame(image):
+        frame_time = time.monotonic()
+        frame = image.copy()
+        frame_buffer.append(frame)
+        frame_times.append(frame_time)
+
+        # Keeping the buffer around 3 seconds long
+        while frame_times and frame_times[0] < frame_time - 3:
+            frame_buffer.popleft()
+            frame_times.popleft()
+
+        # Adding new frames to kicks that are waiting for their extra second
+        for recording in pending_recordings:
+            recording["frames"].append(frame.copy())
+            recording["times"].append(frame_time)
+
+    def save_pending_recordings(force=False):
+        for recording in pending_recordings[:]:
+            if not force and recording["times"][-1] < recording["ended_at"] + 1:
+                continue
+
+            elapsed = recording["times"][-1] - recording["times"][0]
+            if elapsed > 0:
+                video_fps = (len(recording["frames"]) - 1) / elapsed
+            else:
+                video_fps = 30
+
+            save_kick_data(
+                recording["frames"],
+                recording["metrics"],
+                recording_dir,
+                video_fps,
+            )
+            pending_recordings.remove(recording)
 
     # Load bodytracking system and declaring confidence levels
     with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as pose:
         # While the camera is open and analysis has not been stopped
-        while cap.isOpened() and (stop_event is None or not stop_event.is_set()):
+        while cap.isOpened() and (
+                stop_event is None or not stop_event.is_set() or pending_recordings):
             # Get camera status and actual image and break if camera is offline
             ret, frame = cap.read()
             if not ret:
@@ -173,7 +211,7 @@ def run_pose_detection(
                     cv2.circle(image, chest_dot_position, 6, (0, 255, 0), -1)
 
                 # Saving frame
-                frame_buffer.append(image.copy())
+                add_recording_frame(image)
 
                 # If right side is visible and the thresholds have been set
                 if right_visible and kick_start_threshold is not None:
@@ -246,7 +284,12 @@ def run_pose_detection(
                                 }
                             }
 
-                            save_kick_data(list(frame_buffer), metrics, recording_dir)
+                            pending_recordings.append({
+                                "frames": list(frame_buffer),
+                                "times": list(frame_times),
+                                "metrics": metrics,
+                                "ended_at": time.monotonic(),
+                            })
                             if metrics_callback is not None:
                                 # Calling Flask's function with this kick's metrics
                                 metrics_callback(metrics)
@@ -323,10 +366,22 @@ def run_pose_detection(
                                 }
                             }
 
-                            save_kick_data(list(frame_buffer), metrics, recording_dir)
+                            pending_recordings.append({
+                                "frames": list(frame_buffer),
+                                "times": list(frame_times),
+                                "metrics": metrics,
+                                "ended_at": time.monotonic(),
+                            })
                             if metrics_callback is not None:
                                 # Calling Flask's function with this kick's metrics
                                 metrics_callback(metrics)
+
+            else:
+                # Still saving frames if MediaPipe temporarily loses the person
+                add_recording_frame(image)
+
+            # Saving each clip once its extra second has been recorded
+            save_pending_recordings()
 
             # Showing the webcam feed
             if frame_callback is not None:
@@ -340,6 +395,9 @@ def run_pose_detection(
             if display and cv2.waitKey(10) & 0xFF == ord('q'):
                 break
     
+    # Saving any clip that was still waiting if the camera stopped unexpectedly
+    save_pending_recordings(force=True)
+
     # Releasing webcam and closing OpenCV windows
     if camera is None:
         cap.release()

@@ -76,7 +76,7 @@ def reached_chest_height(kick_y, chest_y):
     # A smaller y value means the foot is higher in the image.
     return kick_y <= chest_y
 
-def save_kick_data(frame_buffer, metrics, recording_dir=None):
+def save_kick_data(frame_buffer, metrics, recording_dir=None, video_fps=30):
     # Creating directory
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     # Keeping the old save location when running without the web app
@@ -96,11 +96,9 @@ def save_kick_data(frame_buffer, metrics, recording_dir=None):
     if frame_buffer:
         height, width, _ = frame_buffer[0].shape
         video_path = os.path.join(create_dir, "kick.mp4")
-        # Used for how the video is compressed
-        # NOTE: if their are errors in the future, double check this line as this is my first time
-                        # trying this
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        output = cv2.VideoWriter(video_path, fourcc, 30, (width, height))
+        # Using a codec most browsers can play
+        fourcc = cv2.VideoWriter_fourcc(*'avc1')
+        output = cv2.VideoWriter(video_path, fourcc, video_fps, (width, height))
 
         # Finish writing to the file and save/close it 
         for f in frame_buffer:

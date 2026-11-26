@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Sessions &amp; Videos - Taekwondo Kick Analyzer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-dark app-navbar">
+        <div class="container">
+            <a class="navbar-brand fw-semibold" href="/">Kick Analyzer</a>
+            <a class="nav-link text-white" href="{{ url_for('index') }}">Analyzer</a>
+        </div>
+    </nav>
+
+    <main class="container py-4">
+        <div class="page-heading mb-4">
+            <h1 class="h3 mb-1">Sessions &amp; videos</h1>
+            <p class="text-secondary mb-0">Browse saved kicks by date.</p>
+        </div>
+
+        <!-- Picking a date to see its saved kicks -->
+        <form class="row g-2 align-items-end mb-4" method="get" action="{{ url_for('sessions') }}">
+            <div class="col-sm-6 col-md-4">
+                <label class="form-label" for="session-date">Training date</label>
+                <select class="form-select" id="session-date" name="date" {% if not dates %}disabled{% endif %}>
+                    {% for date in dates %}
+                    <option value="{{ date }}" {% if date == selected_date %}selected{% endif %}>{{ date }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-primary" type="submit" {% if not dates %}disabled{% endif %}>Show date</button>
+            </div>
+        </form>
+
+        <!-- Showing saved kicks and session totals for the selected date -->
+        {% if selected_date %}
+        <section class="mb-4">
+            <div class="d-flex align-items-baseline justify-content-between mb-3">
+                <h2 class="h5 mb-0">{{ selected_date }}</h2>
+                <span class="text-secondary">{{ kick_count }} saved kick{{ '' if kick_count == 1 else 's' }}</span>
+            </div>
+
+            {% if kick_groups %}
+                {% for group in kick_groups %}
+                <div class="mb-4">
+                    <h3 class="h6 mb-3">{{ group.name }} <span class="text-secondary">({{ group.kicks|length }} kicks)</span></h3>
+                    <div class="row g-3">
+                        {% for kick in group.kicks %}
+                        <div class="col-12 col-xl-6">
+                            <article class="recording-item h-100">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h4 class="h6 mb-0">{{ kick.recorded_at }}</h4>
+                                    <span class="badge text-bg-light border text-uppercase">{{ kick.metrics.side }} side</span>
+                                </div>
+
+                                {% if kick.has_video %}
+                                <video class="video-player mb-2" controls preload="metadata">
+                                    <source src="{{ url_for('recording', clip_id=kick.clip_id) }}" type="video/mp4">
+                                    Your browser does not support MP4 video.
+                                </video>
+                                <div class="d-flex gap-3 mb-3 align-items-center">
+                                    <a href="{{ url_for('recording', clip_id=kick.clip_id) }}" target="_blank" rel="noopener">Open video</a>
+                                    <a href="{{ url_for('recording', clip_id=kick.clip_id, download=1) }}">Download</a>
+                                    <button class="btn btn-sm btn-outline-danger delete-recording"
+                                            data-url="{{ url_for('recording', clip_id=kick.clip_id) }}">Delete</button>
+                                </div>
+                                {% else %}
+                                <p class="text-secondary">No video was saved for this kick.</p>
+                                <button class="btn btn-sm btn-outline-danger delete-recording"
+                                        data-url="{{ url_for('recording', clip_id=kick.clip_id) }}">Delete kick</button>
+                                {% endif %}
+
+                                <table class="table table-sm table-bordered mb-0">
+                                    <tbody>
+                                        <tr><th scope="row">Max knee angle</th><td>{{ "%.2f"|format(kick.metrics.max_knee_angle) }}°</td></tr>
+                                        <tr><th scope="row">Max kick height</th><td>{{ "%.3f"|format(kick.metrics.max_kick_height) }}</td></tr>
+                                        <tr>
+                                            <th scope="row">Duration</th>
+                                            <td>{% if kick.metrics.duration is not none %}{{ "%.2f"|format(kick.metrics.duration) }}s{% else %}n/a{% endif %}</td>
+                                        </tr>
+                                        <tr><th scope="row">Height feedback</th><td>{{ kick.metrics.feedback.height }}</td></tr>
+                                        <tr><th scope="row">Knee feedback</th><td>{{ kick.metrics.feedback.knee }}</td></tr>
+                                        <tr><th scope="row">Speed feedback</th><td>{{ kick.metrics.feedback.speed }}</td></tr>
+                                    </tbody>
+                                </table>
+                            </article>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+            <p class="text-secondary">No saved kick videos for this date.</p>
+            {% endif %}
+        </section>
+
+        <section>
+            <h2 class="h5 mb-3">Web app sessions</h2>
+            {% if sessions %}
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered bg-white align-middle">
+                    <thead>
+                        <tr>
+                            <th scope="col">Started</th>
+                            <th scope="col">Kicks</th>
+                            <th scope="col">Right</th>
+                            <th scope="col">Left</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for session in sessions %}
+                        <tr>
+                            <td>{{ session.started_at[11:16] }}</td>
+                            <td>{{ session.kick_count }}</td>
+                            <td>{{ session.right_kicks }}</td>
+                            <td>{{ session.left_kicks }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-secondary">No web app sessions were recorded on this date.</p>
+            {% endif %}
+        </section>
+        {% else %}
+        <p class="text-secondary">No saved sessions or kick videos yet.</p>
+        {% endif %}
+    </main>
+    <script src="{{ url_for('static', filename='sessions.js') }}"></script>
+</body>
+</html>

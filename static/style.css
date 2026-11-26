@@ -1,0 +1,82 @@
+/* Basic page colors */
+body {
+    background: #f3f5f7;
+    color: #202a35;
+}
+
+.app-navbar {
+    background: #202a35;
+}
+
+.app-navbar .navbar-brand {
+    letter-spacing: 0.02em;
+}
+
+.page-heading {
+    border-left: 4px solid #b52b3a;
+    padding-left: 1rem;
+}
+
+.btn-primary {
+    --bs-btn-bg: #b52b3a;
+    --bs-btn-border-color: #b52b3a;
+    --bs-btn-hover-bg: #962330;
+    --bs-btn-hover-border-color: #962330;
+    --bs-btn-active-bg: #84202b;
+    --bs-btn-active-border-color: #84202b;
+}
+
+.text-primary {
+    color: #a32332 !important;
+}
+
+/* Making the camera feed fit the page */
+.camera-panel {
+    overflow: hidden;
+    border: 1px solid #d5dbe1;
+    border-radius: 0.375rem;
+    background: #202a35;
+}
+
+.camera-feed {
+    display: block;
+    width: 100%;
+    max-height: 520px;
+    object-fit: contain;
+}
+
+.camera-feed[hidden] {
+    display: none;
+}
+
+.camera-placeholder {
+    display: grid;
+    min-height: 280px;
+    place-items: center;
+    padding: 2rem;
+    color: #e5e9ed;
+    text-align: center;
+}
+
+.camera-placeholder[hidden] {
+    display: none;
+}
+
+/* Showing saved kick videos */
+.recording-item {
+    border: 1px solid #d5dbe1;
+    border-radius: 0.375rem;
+    background: #fff;
+    padding: 1rem;
+}
+
+.video-player {
+    display: block;
+    width: 100%;
+    max-height: 360px;
+    background: #202a35;
+}
+
+.table {
+    --bs-table-bg: #fff;
+}

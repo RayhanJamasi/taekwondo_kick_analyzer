@@ -76,10 +76,15 @@ def reached_chest_height(kick_y, chest_y):
     # A smaller y value means the foot is higher in the image.
     return kick_y <= chest_y
 
-def save_kick_data(frame_buffer, metrics):
+def save_kick_data(frame_buffer, metrics, recording_dir=None):
     # Creating directory
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    create_dir = os.path.join("data", f"{timestamp}_{metrics['side']}")
+    # Keeping the old save location when running without the web app
+    if recording_dir is None:
+        create_dir = os.path.join("data", f"{timestamp}_{metrics['side']}")
+    else:
+        # Saving each kick in the camera session folder
+        create_dir = os.path.join(recording_dir, f"{timestamp}_{metrics['side']}")
     os.makedirs(create_dir, exist_ok=True)
 
     # Saving the metrics/info

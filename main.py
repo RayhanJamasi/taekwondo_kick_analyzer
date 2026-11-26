@@ -17,9 +17,17 @@ mp_pose = mp.solutions.pose # Detection model that figures out where each part o
 
 # Creates the pose detection model, show_coords = False to not print out coordinates
 # and visibility threshold used for when to print out the debugging info for joints
-def run_pose_detection(show_coords=False, visibility_threshold=0.5):
+def run_pose_detection(
+        show_coords=False,
+        visibility_threshold=0.5,
+        frame_callback=None,
+        metrics_callback=None,
+        stop_event=None,
+        display=True,
+        camera=None,
+        recording_dir=None):
     # Start webcam (0 so it defaults to base webcam)
-    cap = cv2.VideoCapture(0)  
+    cap = camera if camera is not None else cv2.VideoCapture(0)
 
     # Kick state tracking variables for right and left sides
     right_kick_in_progress = False
@@ -52,8 +60,8 @@ def run_pose_detection(show_coords=False, visibility_threshold=0.5):
 
     # Load bodytracking system and declaring confidence levels
     with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as pose:
-        # While camera is open
-        while cap.isOpened():
+        # While the camera is open and analysis has not been stopped
+        while cap.isOpened() and (stop_event is None or not stop_event.is_set()):
             # Get camera status and actual image and break if camera is offline
             ret, frame = cap.read()
             if not ret:
@@ -68,8 +76,12 @@ def run_pose_detection(show_coords=False, visibility_threshold=0.5):
                 cv2.putText(frame, str(remaining), (w // 2 - 50, h // 2), 
                             cv2.FONT_HERSHEY_SIMPLEX, 4, (0, 0, 255), 8)
 
-                cv2.imshow('Kick Analyzer', frame)
-                if cv2.waitKey(5) & 0xFF == 27:
+                if frame_callback is not None:
+                    frame_callback(frame)
+
+                if display:
+                    cv2.imshow('Kick Analyzer', frame)
+                if display and cv2.waitKey(5) & 0xFF == 27:
                     break
                 continue
 
@@ -160,7 +172,7 @@ def run_pose_detection(show_coords=False, visibility_threshold=0.5):
                 # Saving frame
                 frame_buffer.append(image.copy())
 
-                # If right side is visible, get the angles using the helper functions
+                # If right side is visible and the thresholds have been set
                 if right_visible and kick_start_threshold is not None:
                     right_knee_angle = get_knee_angle(landmarks, side="right")
                     right_kick_height = get_kick_height(landmarks, side="right")
@@ -231,10 +243,13 @@ def run_pose_detection(show_coords=False, visibility_threshold=0.5):
                                 }
                             }
 
-                            save_kick_data(list(frame_buffer), metrics)
+                            save_kick_data(list(frame_buffer), metrics, recording_dir)
+                            if metrics_callback is not None:
+                                # Sending the kick results back to the browser
+                                metrics_callback(metrics)
 
 
-                # If left side is visible, get the angles using the helper functions
+                # If left side is visible and the thresholds have been set
                 if left_visible and kick_start_threshold is not None:
                     left_knee_angle = get_knee_angle(landmarks, side="left")
                     left_kick_height = get_kick_height(landmarks, side="left")
@@ -305,18 +320,27 @@ def run_pose_detection(show_coords=False, visibility_threshold=0.5):
                                 }
                             }
 
-                            save_kick_data(list(frame_buffer), metrics)
+                            save_kick_data(list(frame_buffer), metrics, recording_dir)
+                            if metrics_callback is not None:
+                                # Sending the kick results back to the browser
+                                metrics_callback(metrics)
 
             # Showing the webcam feed
-            cv2.imshow('Pose Detection', image)
+            if frame_callback is not None:
+                # Sending the processed frame back to the browser
+                frame_callback(image)
 
             # Checks every 10 ms and quits when user presses the q key
-            if cv2.waitKey(10) & 0xFF == ord('q'):
+            if display:
+                cv2.imshow('Pose Detection', image)
+            if display and cv2.waitKey(10) & 0xFF == ord('q'):
                 break
     
     # Releasing webcam and closing OpenCV windows
-    cap.release()
-    cv2.destroyAllWindows()
+    if camera is None:
+        cap.release()
+    if display:
+        cv2.destroyAllWindows()
 
 # Running the program if called with show_coords to True
 if __name__ == "__main__":

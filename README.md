@@ -8,7 +8,7 @@
 ![Angle Detection](https://img.shields.io/badge/Feature-Angle%20Calculation-FF0000?style=flat)
 ![Kick Feedback](https://img.shields.io/badge/Feedback-Form%20%26%20Height-000000?style=flat)
 ![Platform](https://img.shields.io/badge/Platform-macOS-FF0000?logo=apple&logoColor=white&style=flat)
-![Terminal App](https://img.shields.io/badge/Interface-Terminal-000000?logo=console&logoColor=white&style=flat)
+![Web App](https://img.shields.io/badge/Interface-Flask%20Web%20App-000000?style=flat)
 ![Repo Size](https://img.shields.io/github/repo-size/RayhanJamasi/taekwondo_kick_analyzer?color=FF0000&label=Repo%20Size&style=flat)
 ![File Count](https://img.shields.io/github/directory-file-count/RayhanJamasi/taekwondo_kick_analyzer?color=000000&label=Files&style=flat)
 
@@ -33,7 +33,7 @@ This is a program that I use to help improve my kicks. It utilizes packages like
 There are a few things that must be understood before using the program:
   1. **Adjustment**: This program was created to work for people of all heights. Due to this, I created a 10-second timer when the program starts that allows the user to get into position. During this time, the user needs to stand up straight, face the screen directly, and ensure all their limbs are shown. Once the timer is finished, a green dot will appear at your chest height. This green dot will be used as the threshold for your kicking height. A threshold is also created in relation to your feet. Because of this, it is important not to move closer/further from the screen as it can lead to inaccurate metrics.  
   2. **Kicking**: You can now turn 90 degrees in either direction and perform your kick. The program will start analyzing at the start of the kick and stop when the kick finishes. Please note that there is a 0.5-second cooldown time between analyses to prevent inaccurate results.
-  3. **Results**: Once the kick is finished, the results will be printed in the terminal. At this point, you can either view your results or continue kicking to create more results. To end the program, click the **q** key.
+  3. **Results**: The latest kick metrics are shown in the web app. Select **Stop** to finish the session and save its summary.
 
 ## Quick Start
 
@@ -47,13 +47,13 @@ py -3.12 -m venv .venv312
 python -m pip install -r requirements.txt
 ```
 
-### 2. Run the Program
+### 2. Run the Web App
 
 ```powershell
-python main.py
+python app.py
 ```
 
-Make sure your webcam is connected and allowed to access the camera. Press **q** to quit.
+Open http://127.0.0.1:5000, then select **Start** to use the webcam and **Stop** to finish a session. Camera access stays on this computer. Session summaries are stored in `data/sessions.db` and remain after restarting the app. Use **Sessions & videos** to pick a date, review kick metrics, play or download a saved clip, or delete a kick and its video. New kick videos and metrics are grouped by camera session under `data/sessions/`; older recordings under `data/` still appear in the archive.
 
 ## Status
 

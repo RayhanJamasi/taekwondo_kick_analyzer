@@ -23,6 +23,7 @@ from flask import (
 from main import run_pose_detection
 
 
+# Finding this app.py file first, then building the data paths from its folder
 app = Flask(__name__)
 data_dir = Path(__file__).resolve().parent / "data"
 database_path = data_dir / "sessions.db"
@@ -30,7 +31,7 @@ session_lock = threading.Lock()
 current_session = None
 
 
-# Creating the table for saved camera sessions
+# Making the data folder and the table if they aren't there already
 def init_db():
     data_dir.mkdir(exist_ok=True)
     with closing(sqlite3.connect(database_path)) as db:
@@ -62,6 +63,7 @@ def get_history():
 
 
 def get_recording_datetime(folder):
+    # Kick folder names end with a timestamp and the kicking side
     try:
         timestamp, side = folder.name.rsplit("_", 1)
         recorded_at = datetime.strptime(timestamp, "%Y-%m-%d_%H-%M-%S")
@@ -74,39 +76,47 @@ def get_recording_datetime(folder):
 
 
 def get_recording_folders():
-    # Checking the folders where old and new kick videos are saved
+    # Looking through folders that hold old clips or new camera-session folders
     for folder in data_dir.iterdir():
         if not folder.is_dir():
             continue
         if folder.name == "sessions":
+            # New clips are inside a camera-session folder, so go one level deeper
             for session_folder in folder.iterdir():
                 if session_folder.is_dir():
                     for kick_folder in session_folder.iterdir():
                         if kick_folder.is_dir():
+                            # yield gives back one folder at a time as the loop finds it
                             yield kick_folder
         else:
+            # Old clips were saved directly inside data
             yield folder
 
 
 # Getting the dates that have saved sessions or kicks
 def get_session_dates():
+    # Asking SQLite for the dates when a camera session finished
     with closing(sqlite3.connect(database_path)) as db:
         session_dates = db.execute(
             "SELECT DISTINCT substr(ended_at, 1, 10) FROM sessions"
         ).fetchall()
 
+    # A set keeps each date only once
     dates = {row[0] for row in session_dates}
+    # Adding dates from the kick folders too, including older clips
     for folder in get_recording_folders():
         recorded_at = get_recording_datetime(folder)
         if recorded_at is not None:
             dates.add(recorded_at.strftime("%Y-%m-%d"))
 
+    # Showing the newest date first in the date dropdown
     return sorted(dates, reverse=True)
 
 
 # Grouping saved kicks by camera session for this date
 def get_recorded_kicks(selected_date):
     groups = {}
+    # Checking each saved kick folder and keeping only the chosen date
     for folder in get_recording_folders():
         recorded_at = get_recording_datetime(folder)
         metrics_path = folder / "metrics.json"
@@ -130,6 +140,7 @@ def get_recorded_kicks(selected_date):
         else:
             group_name = "Older kicks (not grouped)"
 
+        # Adding this kick to the list for its camera session
         groups.setdefault(group_name, []).append({
             "clip_id": folder.relative_to(data_dir).as_posix(),
             "recorded_at": recorded_at.strftime("%I:%M:%S %p"),
@@ -137,6 +148,7 @@ def get_recorded_kicks(selected_date):
             "has_video": (folder / "kick.mp4").is_file(),
         })
 
+    # Turning the grouped lists into the shape the page uses
     return [
         {
             "name": group_name,
@@ -186,12 +198,14 @@ def save_session(session):
 def run_session(session):
     camera = None
     try:
+        # Opening the computer's default camera
         camera = cv2.VideoCapture(0)
         if not camera.isOpened():
             raise RuntimeError("Could not open the camera. Check that it is connected and not in use.")
 
         run_pose_detection(
             show_coords=True,
+            # These lambdas pass each new frame/result to the helper below
             frame_callback=lambda frame: update_frame(session, frame),
             metrics_callback=lambda metrics: update_metrics(session, metrics),
             stop_event=session["stop_event"],
@@ -203,9 +217,11 @@ def run_session(session):
         with session["lock"]:
             session["error"] = str(error)
     finally:
+        # Releasing the camera when analysis ends, even if an error happened
         if camera is not None:
             camera.release()
 
+        # Copying the session values while the worker thread isn't changing them
         with session["lock"]:
             session["running"] = False
             session["ended_at"] = datetime.now().isoformat(timespec="seconds")
@@ -219,6 +235,7 @@ def run_session(session):
 
 # Converting a camera frame so the browser can show it
 def update_frame(session, frame):
+    # Turning the OpenCV image into JPG bytes the browser can display
     success, encoded = cv2.imencode(".jpg", frame)
     if not success:
         raise RuntimeError("Could not encode the camera frame.")
@@ -230,6 +247,7 @@ def update_frame(session, frame):
 
 # Updating the session totals when a kick finishes
 def update_metrics(session, metrics):
+    # Keeping the newest kick and updating the totals for this session
     with session["lock"]:
         session["latest_metrics"] = metrics
         session["kick_results"].append(metrics)
@@ -250,6 +268,7 @@ def index():
 @app.route("/sessions")
 def sessions():
     dates = get_session_dates()
+    # Use the date from the link, or start with the newest one
     selected_date = request.args.get("date", dates[0] if dates else "")
     if selected_date and selected_date not in dates:
         abort(404)
@@ -270,6 +289,7 @@ def sessions():
 # Opening or deleting one saved kick
 @app.route("/recordings/<path:clip_id>", methods=["GET", "DELETE"])
 def recording(clip_id):
+    # Making sure the requested clip stays inside the data folder
     recording_dir = (data_dir / clip_id).resolve()
     recorded_at = get_recording_datetime(recording_dir)
     try:
@@ -307,6 +327,7 @@ def start():
         if current_session is not None and current_session["running"]:
             return jsonify({"error": "Analysis is already running."}), 409
 
+        # Giving this camera session its own ID and folder
         session_id = uuid.uuid4().hex
         session_started = datetime.now()
         current_session = {
@@ -348,6 +369,7 @@ def stop():
     if session is None or not session["running"]:
         return jsonify({"error": "Analysis is not running."}), 409
 
+    # Telling the camera loop to stop, then waiting for it to finish
     session["stop_event"].set()
     session["thread"].join(timeout=10)
     if session["thread"].is_alive():
@@ -364,6 +386,7 @@ def status():
     if session is None:
         return jsonify({"running": False, "latest_metrics": None})
 
+    # Reading shared session values safely while the camera thread updates them
     with session["lock"]:
         return jsonify({
             "running": session["running"],
@@ -394,6 +417,7 @@ def video_feed():
     def frames():
         last_frame_number = -1
         while True:
+            # Getting the newest frame and checking if the camera is still running
             with session["lock"]:
                 frame = session["latest_frame"]
                 frame_number = session["frame_number"]
@@ -401,6 +425,7 @@ def video_feed():
 
             if frame is not None and frame_number != last_frame_number:
                 last_frame_number = frame_number
+                # Sending this JPG frame as part of the live browser feed
                 yield b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + frame + b"\r\n"
             elif not running:
                 break

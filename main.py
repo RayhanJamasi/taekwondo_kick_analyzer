@@ -26,7 +26,8 @@ def run_pose_detection(
         display=True,
         camera=None,
         recording_dir=None):
-    # Start webcam (0 so it defaults to base webcam)
+    # Use the camera Flask already opened, or open camera 0 when running this file by itself
+    # The callbacks let Flask receive frames and kick results while this loop keeps running
     cap = camera if camera is not None else cv2.VideoCapture(0)
 
     # Kick state tracking variables for right and left sides
@@ -77,10 +78,12 @@ def run_pose_detection(
                             cv2.FONT_HERSHEY_SIMPLEX, 4, (0, 0, 255), 8)
 
                 if frame_callback is not None:
+                    # Giving Flask this countdown frame to show in the browser
                     frame_callback(frame)
 
                 if display:
                     cv2.imshow('Kick Analyzer', frame)
+                # Only check for Escape when showing the OpenCV window
                 if display and cv2.waitKey(5) & 0xFF == 27:
                     break
                 continue
@@ -245,7 +248,7 @@ def run_pose_detection(
 
                             save_kick_data(list(frame_buffer), metrics, recording_dir)
                             if metrics_callback is not None:
-                                # Sending the kick results back to the browser
+                                # Calling Flask's function with this kick's metrics
                                 metrics_callback(metrics)
 
 
@@ -322,17 +325,18 @@ def run_pose_detection(
 
                             save_kick_data(list(frame_buffer), metrics, recording_dir)
                             if metrics_callback is not None:
-                                # Sending the kick results back to the browser
+                                # Calling Flask's function with this kick's metrics
                                 metrics_callback(metrics)
 
             # Showing the webcam feed
             if frame_callback is not None:
-                # Sending the processed frame back to the browser
+                # Calling Flask's function with this processed frame
                 frame_callback(image)
 
             # Checks every 10 ms and quits when user presses the q key
             if display:
                 cv2.imshow('Pose Detection', image)
+            # Only check for q when showing the OpenCV window
             if display and cv2.waitKey(10) & 0xFF == ord('q'):
                 break
     

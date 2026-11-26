@@ -1,3 +1,4 @@
+// Getting the page elements so the code can update them
 const startButton = document.getElementById("start-button");
 const stopButton = document.getElementById("stop-button");
 const statusMessage = document.getElementById("status-message");
@@ -9,6 +10,7 @@ let wasRunning = false;
 function showMetrics(metrics) {
     if (!metrics) return;
 
+    // Putting the values from Python into the matching spots on the page
     document.getElementById("metric-side").textContent = metrics.side;
     document.getElementById("metric-knee").textContent = `${metrics.max_knee_angle.toFixed(2)}°`;
     document.getElementById("metric-height").textContent = metrics.max_kick_height.toFixed(3);
@@ -21,6 +23,7 @@ function showMetrics(metrics) {
 
 // Updating the saved session table
 async function refreshHistory() {
+    // Asking Flask for the saved sessions; await means wait for its reply
     const response = await fetch("/history");
     const sessions = await response.json();
     const rows = document.getElementById("history-rows");
@@ -35,6 +38,7 @@ async function refreshHistory() {
     }
 
     for (const session of sessions) {
+        // Making a table row for each saved session
         const row = rows.insertRow();
         for (const value of [
             session.ended_at,
@@ -55,6 +59,7 @@ async function refreshHistory() {
 
 // Checking if the camera is running and updating the page
 async function refreshStatus() {
+    // Getting the latest camera status from Flask once a second
     const response = await fetch("/status");
     const status = await response.json();
     startButton.disabled = status.running;
@@ -75,6 +80,7 @@ async function refreshStatus() {
     }
 
     if (wasRunning && !status.running) {
+        // Refresh the table after a camera session has just finished
         await refreshHistory();
     }
     wasRunning = status.running;
@@ -82,6 +88,7 @@ async function refreshStatus() {
 
 // Starting the camera when Start is clicked
 startButton.addEventListener("click", async () => {
+    // This function runs when the user clicks Start
     statusMessage.textContent = "Starting camera...";
     const response = await fetch("/start", { method: "POST" });
     const result = await response.json();
@@ -99,6 +106,7 @@ startButton.addEventListener("click", async () => {
 
 // Stopping the camera when Stop is clicked
 stopButton.addEventListener("click", async () => {
+    // This function runs when the user clicks Stop
     statusMessage.textContent = "Stopping...";
     const response = await fetch("/stop", { method: "POST" });
     const result = await response.json();
@@ -110,8 +118,10 @@ stopButton.addEventListener("click", async () => {
 });
 
 cameraFeed.addEventListener("error", () => {
+    // Show the placeholder if the browser can't load the feed
     cameraFeed.hidden = true;
     cameraPlaceholder.hidden = false;
 });
 
+// Check for status updates every 1000 milliseconds (one second)
 setInterval(refreshStatus, 1000);

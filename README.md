@@ -57,7 +57,7 @@ Open http://127.0.0.1:5000, then select **Start** to use the webcam and **Stop**
 
 ## Status
 
-Currently, there is a problem with the speed calculations. I am currently working to fix that, so please be patient!
+Speed calculation has been fixed, currently working on incorporating other types of kicks
 
 
 ## Future Features
